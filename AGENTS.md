@@ -30,10 +30,10 @@ In practice: `.mdc` rules define the code standards. Agent files define the work
 | **Tech Lead** | Human-facing orchestrator. Owns architecture, state, and approvals. | _(main Cursor session)_ | Direct |
 | **Product Designer** | Screen planning + Figma Make prompt guidance + visual QA. | `product-designer.md` | `/phase2`, `/visual-audit` |
 | **Backend Developer** | DB schema, migrations, RLS, Edge Functions, webhooks, cron. | `backend-developer.md` | `/foundation`, `/feature` |
-| **Frontend Developer** | Screens (ported from Figma Make TSX), shared components, mobile viewport. | `frontend-developer.md` | `/foundation`, `/feature` |
+| **Frontend Developer** | Screens (copied from Figma Make TSX), shared components, mobile viewport. | `frontend-developer.md` | `/foundation`, `/feature` |
 | **QA Agent** | Feature validation + pre-handoff safety audit. | `qa-agent.md` | `/feature`, pre-handoff |
 | **DevOps Agent** | Production deploy. Runs once after QA sign-off. | `devops-agent.md` | `/deploy` |
-| **Research Agent** | External dependency research. Produces integration docs. | `research-agent.md` | `/research`, auto from `/phase4` and `/new-feature` |
+| **Research Agent** | Technical research — integration docs + implementation pattern research. | `research-agent.md` | `/research`, auto from `/phase4` and `/new-feature` |
 
 The human communicates exclusively with the Tech Lead. Sub-agents never communicate with the human directly.
 
@@ -50,7 +50,8 @@ All specialists are used proactively. When choosing which subagent to launch:
 | Validate a completed feature end-to-end | `qa-agent` |
 | Any design work — screen specs, Make prompts, visual audit | `product-designer` |
 | Any deployment work | `devops-agent` |
-| Research an external integration (API docs, SDK, webhooks) | `research-agent` |
+| Research an external integration (API docs, SDK, webhooks) | `research-agent` (Mode 1) |
+| Research implementation patterns for complex features (concurrency, auth, billing) | `research-agent` (Mode 2) |
 | Complex bug investigation (root cause unclear, fix spans >3 files) | Tech Lead uses `.cursor/skills/investigate/SKILL.md` |
 | Security audit before deploy (OWASP + RLS + secrets + deps) | QA Agent uses `.cursor/skills/security-audit/SKILL.md` |
 
@@ -60,8 +61,9 @@ All specialists are used proactively. When choosing which subagent to launch:
 
 | Phase | Command | Who | Gate |
 |---|---|---|---|
-| **Office Hours** | `/office-hours` | Tech Lead | _(optional — run before /init to stress-test the product idea)_ |
-| **Init** | `/init` | Tech Lead | Confirm Phase 1 artifacts present |
+| **Phase 1** | _(external)_ | Human (Claude.ai, Gemini, etc.) | Northstar + EDS placed in `artifacts/docs/` |
+| **Office Hours** | `/office-hours` | Tech Lead | Northstar validated — all 12 sections pass + stack fit check |
+| **Init** | `/init` | Tech Lead | Phase 1 artifacts present + validated |
 | **Phase 2** | `/phase2` | Product Designer | Human approves screen specs + Figma Make brief |
 | **Figma Make** | _(human-driven)_ | Human in Figma Make | Make code copied to `src/make-import/` |
 | **Phase 4** | `/phase4` | Tech Lead | Human approves tech spec |
@@ -69,6 +71,7 @@ All specialists are used proactively. When choosing which subagent to launch:
 | **Foundation** | `/foundation` | Backend (infra + SEO/PWA) → Frontend (Make import + component inventory + Tailwind config + landing + auth) | Auto-proceeds after commit |
 | **Features** | `/feature [name]` | Backend → Frontend → QA (per feature, parallel waves) | Human approves each QA PASS |
 | **Visual audit** | `/visual-audit [url]` | Product Designer | Fix all BLOCKING findings |
+| **Dogfood** | `/dogfood` | Human (with Tech Lead) | Fix all BLOCKING findings |
 | **Pre-handoff** | `/pre-handoff` | QA Agent | Human approves |
 | **Deploy** | `/deploy [ref]` | DevOps Agent | — |
 
@@ -101,8 +104,10 @@ Blocking gates are enforced — no agent self-proceeds to the next phase.
 | `artifacts/plans/build-plan.md` | Feature dependency graph + per-feature context packages |
 | `artifacts/plans/project-plan.md` | Phase + feature completion tracker |
 | `artifacts/qa-reports/[feature]-baseline.json` | Per-feature QA health scores and findings — written by QA Agent |
+| `artifacts/qa-reports/dogfood-report.md` | Dogfooding findings — written during `/dogfood` |
 | `artifacts/issues/[issue-name].md` | Issue tracking — kebab-case, one file per issue |
 | `artifacts/integrations/[name].md` | Integration research docs — one per external dependency, written by Research Agent |
+| `artifacts/integrations/pattern-[name].md` | Technical pattern research docs — one per complex feature, written by Research Agent |
 | `artifacts/docs/features/[name].md` | Feature docs for post-launch features — written during `/new-feature` |
 
 ### Source
@@ -127,8 +132,7 @@ Blocking gates are enforced — no agent self-proceeds to the next phase.
 | `src/lib/database.types.ts` | Generated types from `supabase gen types` |
 | `src/lib/formatters.ts` | Formatting utilities |
 | `src/lib/constants.ts` | App-wide constants |
-| `src/app.css` | Tailwind directives + @font-face + base styles |
-| `src/app.css` | Brand tokens (CSS custom properties from Make's theme.css) |
+| `src/app.css` | Tailwind directives + @font-face + base styles + brand tokens (CSS custom properties from Make's theme.css) |
 | `react-router.config.ts` | SPA mode, pre-render `/` |
 | `vite.config.ts` | Vite + React Router + Tailwind + PWA |
 | `vercel.json` | SPA rewrite rules |

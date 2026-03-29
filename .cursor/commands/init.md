@@ -27,9 +27,9 @@ Open `agent-workspace/ACTIVE_CONTEXT.md` and set:
 - `Updated:` to today's date and time
 - `Current focus:` to "Init — confirming Phase 1 artifacts, ready for Phase 2"
 
-### 2. Confirm Phase 1 artifacts
+### 2. Confirm Phase 1 artifacts + structural validation
 
-Phase 1 (northstar + emotional design system) is produced entirely outside this project. These files must be provided by the human before `/init` can proceed.
+Phase 1 artifacts are produced externally and validated via `/office-hours`. They must exist before `/init` can proceed.
 
 Check that both required inputs exist in `artifacts/docs/`:
 
@@ -40,6 +40,26 @@ Check that both required inputs exist in `artifacts/docs/`:
 | `.cursor/rules/copy-rules.mdc` | Soft check — if still the placeholder, step 4 fills it from the EDS |
 
 If northstar or EDS are missing: report exactly which files are absent and stop.
+
+**Structural validation (mandatory):** Read the northstar and validate that all 12 required sections are present and substantive. Check for:
+
+| Section | Validation |
+|---|---|
+| §1 The Problem | Present, written from user perspective |
+| §2 Primary User | Named person with age, occupation, friction moment |
+| §4 Revenue Model | Specific price point (not "TBD" or a range) |
+| §5 Value Proposition | Follows formula: "[App] helps [user] [do X] so that [Y], without [Z]" |
+| §6 Competitive Moat | Moat type explicitly named (data/network/switching/distribution/brand) |
+| §7 Build Scope | Table covers core loop + retention + monetization + landing page |
+| §8 Not Building | Specific feature names, not vague categories |
+| §9 Auth Model | Exact method specified, not "TBD" |
+| §10 Integrations | Env var names for every service |
+| §11 Payment | Provider named with webhook events |
+| §12 Feature Grouping | Maps to build waves with dependencies |
+
+**If 3+ sections are placeholder or missing:** Hard stop. Tell the human to run `/office-hours` first — it will guide them through producing complete Phase 1 artifacts.
+
+**If 1–2 sections are weak but present:** Warn the human with specific gaps. Allow proceeding if human explicitly approves.
 
 ### 3. Read Phase 1 artifacts
 

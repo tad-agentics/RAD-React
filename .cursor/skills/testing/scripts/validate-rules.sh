@@ -304,6 +304,90 @@ else
   pass
 fi
 
+# Phase 1 skill exists
+if [ ! -f ".cursor/skills/phase1/SKILL.md" ]; then
+  fail "Phase 1 skill missing at .cursor/skills/phase1/SKILL.md — northstar template not available"
+else
+  pass
+fi
+
+# /office-hours references northstar validation (not optional)
+if grep -q "optional" .cursor/commands/office-hours.md 2>/dev/null; then
+  fail "/office-hours still marked as optional — should be mandatory gate"
+else
+  pass
+fi
+
+# /dogfood command exists
+if [ ! -f ".cursor/commands/dogfood.md" ]; then
+  fail "/dogfood command missing — no structured product testing step"
+else
+  pass
+fi
+
+# Tech spec skill references data invariants
+if ! grep -q "invariant" .cursor/skills/tech-spec/SKILL.md 2>/dev/null; then
+  fail "tech-spec SKILL.md missing data invariants step"
+else
+  pass
+fi
+
+# Tech spec skill has anti-pattern checklist
+if ! grep -q "Anti-Pattern Checklist" .cursor/skills/tech-spec/SKILL.md 2>/dev/null; then
+  fail "tech-spec SKILL.md missing schema anti-pattern checklist"
+else
+  pass
+fi
+
+# Architecture skill exists
+if [ ! -f ".cursor/skills/architecture/SKILL.md" ]; then
+  fail "Architecture skill missing at .cursor/skills/architecture/SKILL.md — Tech Lead has no stack constraint reference"
+else
+  pass
+fi
+
+# Architecture skill has complexity signals
+if ! grep -q "Complexity Signal" .cursor/skills/architecture/SKILL.md 2>/dev/null; then
+  fail "Architecture skill missing complexity signals section"
+else
+  pass
+fi
+
+# Architecture skill has stack constraints
+if ! grep -q "Stack Constraints" .cursor/skills/architecture/SKILL.md 2>/dev/null; then
+  fail "Architecture skill missing stack constraints section"
+else
+  pass
+fi
+
+# /office-hours references stack fit check
+if ! grep -q "Stack fit" .cursor/commands/office-hours.md 2>/dev/null; then
+  fail "/office-hours missing stack fit check — product requirements not validated against stack limits"
+else
+  pass
+fi
+
+# Research agent supports Mode 2 (technical pattern research)
+if ! grep -q "Mode 2" .cursor/agents/research-agent.md 2>/dev/null; then
+  fail "Research agent missing Mode 2 — no technical pattern research capability"
+else
+  pass
+fi
+
+# Tech spec skill references complexity scan
+if ! grep -q "complexity" .cursor/skills/tech-spec/SKILL.md 2>/dev/null; then
+  fail "tech-spec SKILL.md missing complexity scan step — features not checked for non-trivial patterns"
+else
+  pass
+fi
+
+# Tech spec skill has technical decisions template
+if ! grep -q "TD-\[N\]\|Technical Decision" .cursor/skills/tech-spec/SKILL.md 2>/dev/null; then
+  fail "tech-spec SKILL.md missing technical decisions template"
+else
+  pass
+fi
+
 echo ""
 
 # ─── SUMMARY ─────────────────────────────────────────────────────────

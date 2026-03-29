@@ -14,7 +14,73 @@ The tech spec is the single source of truth for technical decisions. Two jobs: g
 
 ## Before You Write
 
-Extract from context — the tech spec must not re-derive what the northstar already defines:
+### Step 0 — Complexity scan + selective research
+
+Read `.cursor/skills/architecture/SKILL.md` and scan the northstar features against the **Technical Complexity Signals** (Section 1). For each feature, check:
+
+| Signal category | Triggered? | Feature |
+|---|---|---|
+| Money / Credits | | |
+| Real-Time | | |
+| File Processing | | |
+| Complex Authorization | | |
+| Search / Filtering | | |
+| State Machines | | |
+
+**For each triggered signal:** Dispatch the Research Agent in Mode 2 (technical pattern research):
+
+```
+Task: Technical Pattern Research — [Feature Name]
+
+Research the correct implementation pattern for [feature description] on the RAD stack
+(Supabase Postgres + Edge Functions + React Router v7 SPA).
+
+Complexity signal: [signal from architecture skill]
+Specific question: [e.g., "How should concurrent credit deductions be handled?"]
+Northstar context: [relevant sections from northstar]
+
+Read .cursor/skills/architecture/SKILL.md Section 3 for reference patterns.
+Output to: artifacts/integrations/pattern-[feature-name].md
+```
+
+**For features with no triggered signals:** Skip research. Standard CRUD on Supabase doesn't need investigation — the Tech Lead's training data is sufficient.
+
+**Read research outputs before writing the tech spec.** Every `artifacts/integrations/pattern-*.md` file feeds directly into the schema design (Section 8), Edge Function contracts (Section 10), and technical decisions.
+
+Also check `.cursor/skills/architecture/SKILL.md` Section 3 (Domain Reference Patterns) — if the domain matches a reference pattern (credit billing, subscriptions, multi-tenant, social feed), compare the proposed approach against the reference before writing.
+
+### Step 1 — Data invariants
+
+Before designing the schema, enumerate the data invariants the system must enforce. These come from the northstar and domain knowledge — not from mock data shapes.
+
+**Extract invariants from the northstar and domain:**
+
+For each core entity, state what must always be true:
+
+```markdown
+## Data Invariants
+
+### Credits / Billing
+- A user's credit balance must never go negative
+- Every credit change must have a corresponding transaction record
+- A purchase must be idempotent (webhook retries must not double-charge)
+
+### User Data
+- A user can have exactly one active profile
+- Profile birth_date is immutable after first set
+- [domain-specific invariants from northstar]
+
+### Core Entity
+- [entity] must always have a valid [foreign key]
+- [entity] status transitions: draft → active → completed (no backward transitions)
+- [business rule from northstar]
+```
+
+**Why invariants first:** Invariants drive schema design decisions — CHECK constraints, unique indexes, trigger functions, RLS policies. If you design the schema from mock data shapes alone, you get structurally correct tables that don't enforce business rules.
+
+### Step 2 — Extract from context
+
+The tech spec must not re-derive what the northstar already defines:
 
 **From `artifacts/docs/northstar-[app].html`:**
 - App name, one-line description, primary user — §1–2
@@ -208,9 +274,40 @@ Server-side logic: Edge Functions only (webhooks, cron, email, service_role).
 
 **SDK rule:** Every external SDK (Supabase, payment provider, email provider, LLM) is initialized and accessed through a single wrapper file in `src/lib/`. No component or hook imports a third-party SDK directly. For server-only SDKs (payment, email, LLM), the wrapper calls a Supabase Edge Function via `supabase.functions.invoke()`.
 
-## 8. Database Schema
+## 7b. Technical Decisions
 
-**Derive tables from northstar:**
+Document every non-trivial technical decision made during this spec. Each decision references the research that informed it.
+
+### TD-[N]: [Decision Title]
+
+**Context:** [What feature requires this decision. 1-2 sentences.]
+**Complexity signal:** [From architecture skill — e.g., "Credit balance that can be spent"]
+**Options considered:**
+- A) [Option] — [trade-off]
+- B) [Option] — [trade-off]
+
+**Decision:** [Which option and why]
+**Research basis:** [artifacts/integrations/pattern-[name].md / architecture skill reference pattern / training data]
+**Risks:** [What could go wrong]
+**Revisit trigger:** [What condition would make us reconsider]
+
+*If the research basis is "training data" for a decision with a complexity signal, dispatch the Research Agent before finalizing.*
+
+*Omit this section if no complexity signals were triggered.*
+
+## 8a. Data Invariants
+
+Business rules the system must enforce. Derived from the northstar and domain research — not from mock data. These drive schema constraints, RLS policies, and Edge Function validation.
+
+| Entity | Invariant | Enforcement |
+|---|---|---|
+| [entity] | [what must always be true] | [CHECK constraint / RLS policy / Edge Function validation / application logic] |
+
+*Every invariant must map to a concrete enforcement mechanism. An invariant without enforcement is a wish, not a rule.*
+
+## 8b. Database Schema
+
+**Derive tables from invariants + northstar + Make mock shapes:**
 - **Profiles table:** Northstar §9 (Auth Model) specifies what profile data is stored — birth date, birth time, gender, family members, etc. Every field listed in §9 must appear as a column.
 - **Credit/payment tables:** Northstar §11 (Payment) and §4 (Revenue Model) define the payment model. If credit-based: need `credit_balances` and `credit_transactions` tables. If subscription: need `subscriptions` table.
 - **Core entity tables:** Northstar §7 (Build Scope) and §13 (User Scenarios) reveal which entities the app manages. Every data variable in the wireframe metadata blocks must map to a column in these tables.
@@ -559,6 +656,8 @@ Render as `<script type="application/ld+json">` in the landing page component. E
 
 Before finalizing — all sections present, complete, and traceable to source:
 
+- [ ] 0. Data invariants enumerated — business rules that must always be true, derived from northstar + domain knowledge
+- [ ] 0. Domain research conducted — schema patterns for the specific domain reviewed (credit systems, multi-tenant, etc.)
 - [ ] 1. Overview — one paragraph, primary user, value prop
 - [ ] 2. Functional Requirements — every in-scope capability as a user-observable row; grouped by feature area; cross-checked against northstar §13 scenarios (if present)
 - [ ] 3. Non-Functional Requirements — performance, scale (from northstar §12 if specified), availability, accessibility, security targets
@@ -566,7 +665,7 @@ Before finalizing — all sections present, complete, and traceable to source:
 - [ ] 5. External Integrations — extracted from northstar §10 + §11; SDK, init file, key operations, webhook events per service; research docs supplement only what the northstar doesn't cover
 - [ ] 6. Tech Stack — all layers listed; payment provider from northstar §11 (not hardcoded Stripe); animation libraries from EDS §6 if needed; unused rows omitted
 - [ ] 7. Architecture — data flow described, SDK rule stated
-- [ ] 8. Schema — tables derived from northstar §9 (profile data), §11 (payment/credit), §7 (core entities); every wireframe data variable maps to a column; indexes on all FK and WHERE columns; seed data created
+- [ ] 8. Schema — tables derived from invariants + northstar §9/§11/§7 + Make mock shapes; every wireframe data variable maps to a column; indexes on all FK and WHERE columns; seed data created
 - [ ] 9. Data Access Layer — query function or hook for every screen data need in the screen specs
 - [ ] 10. API Contracts — every Edge Function fully specified; direct client→RLS operations identified; cross-checked against northstar §10 endpoints and screen spec interaction flow branch conditions; northstar §13 scenario endpoints all present
 - [ ] 11. Auth & Security — extracted from northstar §9: exact method, anonymous-first behavior, account trigger, profile data, session rules, OAuth providers with custom vs. native distinction
@@ -577,6 +676,35 @@ Before finalizing — all sections present, complete, and traceable to source:
 - [ ] 16. Email Flows — complete if transactional email; omitted if none
 - [ ] 17. Not Building — copied from northstar §8 + any Phase 2 additions; named features only
 - [ ] 18. SEO & PWA Infrastructure — pre-rendered landing page with meta tags, OG image spec with Vietnamese font, static manifest.json with maskable icons + screenshots, PWA service worker configured, useInstallPrompt hook, Core Web Vitals budget, JSON-LD schemas, sitemap/robots, social sharing validation tools listed
+
+## Schema Anti-Pattern Checklist
+
+Run this checklist against Section 8 before finalizing. Each item is a known failure mode:
+
+### Structural
+- [ ] **Missing transaction log** — if the app has credits/balance, there must be a `transactions` table. Storing only a balance column is a data integrity time bomb.
+- [ ] **Computed columns without source** — if a column is derived (e.g., `total_spent`), the source data must also be stored. Computed columns without a transaction trail cannot be audited or corrected.
+- [ ] **Missing soft delete** — tables with user-generated content should use `deleted_at timestamptz` instead of hard DELETE. Hard deletes break audit trails and referential integrity.
+- [ ] **Incorrect cascade** — ON DELETE CASCADE on user-facing data tables is almost always wrong. Use RESTRICT or SET NULL. CASCADE silently destroys user data.
+
+### Indexes
+- [ ] **Missing FK indexes** — every foreign key column must have a CREATE INDEX statement. Postgres does not auto-index foreign keys.
+- [ ] **Missing WHERE-clause indexes** — columns used in RLS policies (`user_id`, `status`, `created_at` ranges) need indexes.
+- [ ] **Composite index order** — for multi-column indexes, the most selective column goes first.
+
+### Concurrency
+- [ ] **Race condition in balance updates** — credit deduction must use `UPDATE ... SET balance = balance - $1 WHERE balance >= $1 RETURNING balance` (atomic check-and-decrement), not read-modify-write.
+- [ ] **Idempotent webhooks** — webhook handlers must check for duplicate event IDs before processing. Store `event_id` in a `processed_events` table or use upsert.
+
+### RLS
+- [ ] **Shared resources gap** — if the app has team/family/shared data, RLS policies must handle access beyond `user_id = auth.uid()`. Common pattern: join through a membership table.
+- [ ] **Missing INSERT policy** — tables often have SELECT + UPDATE policies but forget INSERT. Every table needs all four CRUD policies explicitly defined (even if some are "denied").
+- [ ] **Service role bypass** — Edge Functions using the service role key bypass RLS entirely. Document which functions use service role and why.
+
+### Data Model
+- [ ] **Status as free text** — status columns should use a CHECK constraint with an enum list, not free-text strings.
+- [ ] **Timestamp without timezone** — all timestamp columns must be `timestamptz`, never `timestamp`. Supabase default is correct but verify.
+- [ ] **Missing created_at/updated_at** — every table should have `created_at timestamptz default now()`. Tables with user-editable data should also have `updated_at`.
 
 ---
 

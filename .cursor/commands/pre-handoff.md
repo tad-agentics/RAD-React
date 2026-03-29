@@ -8,6 +8,7 @@ Runs after all feature waves pass QA and the visual fidelity audit is complete.
 Before dispatching, confirm:
 - [ ] All features in `artifacts/plans/project-plan.md` are marked complete
 - [ ] Visual fidelity audit complete — all BLOCKING items fixed (run `/visual-audit [url]` if not done)
+- [ ] Dogfooding complete — `artifacts/qa-reports/dogfood-report.md` exists with 0 BLOCKING findings (run `/dogfood` if not done)
 - [ ] `artifacts/docs/changelog.md` — 0 BLOCKING items
 - [ ] `artifacts/issues/` — 0 open BLOCKING issues
 - [ ] `npm run build` passes on current state
@@ -23,7 +24,7 @@ Task: Pre-Handoff Safety Audit
 
 Read:
 - .cursor/agents/qa-agent.md (your full instructions)
-- .cursor/skills/review/SKILL.md (your full pre-handoff instructions)
+- .cursor/skills/security-audit/SKILL.md (security audit instructions)
 - .cursor/rules/copy-rules.mdc (copy quality test for compliance check)
 - agent-workspace/ACTIVE_CONTEXT.md
 - artifacts/docs/tech-spec.md
@@ -32,7 +33,7 @@ Read:
 - artifacts/docs/changelog.md
 
 Mode: Pre-Handoff
-Run the two-pass safety audit against the complete codebase (review SKILL.md Pass 1 + Pass 2).
+Run the full pre-handoff audit: security audit (security-audit SKILL.md) + SPA-specific checks defined in your agent file's Pre-Handoff Mode.
 Then run a final adversarial cross-check: challenge each finding — is it a real bug or a false positive?
 Apply AUTO-FIX items directly. Escalate BLOCKING items to Tech Lead.
 Signal completion when test: pre-handoff review complete is committed.

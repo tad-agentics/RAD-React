@@ -1,6 +1,6 @@
-# RAD — Rapid App Development Template
+# RAD — Rapid App Development
 
-Ship a complete product in ~2–3 days. You define the product, Figma Make designs it, agents build it.
+Ship a complete product in 2–3 days. You define the product, Figma Make designs it, a team of AI agents builds it.
 
 ## Stack
 
@@ -8,29 +8,44 @@ React Router v7 (Vite) · Supabase · TanStack React Query · Vercel · Tailwind
 
 ## How It Works
 
-You talk to a **Tech Lead** agent in Cursor. It orchestrates 6 specialist subagents — each with a narrow domain, clear inputs, and defined outputs. Every slash command dispatches the right agent with the right context. You approve gates, agents build.
+You talk to a **Tech Lead** agent in Cursor. It orchestrates 6 specialist subagents — backend, frontend, QA, product design, devops, and research — each with a narrow domain, defined inputs, and structured outputs. Slash commands dispatch the right agent with the right context. You approve gates. Agents build.
 
-The key insight: **Figma Make produces a complete working React app with mock data.** The frontend agent's job is integration — swap mocks for real Supabase queries — not construction. This cuts screen build time from ~40 min to ~15 min.
+The key insight: **Figma Make produces a complete working React app with mock data.** The frontend agent's job is integration — swap mocks for real Supabase queries — not construction. This cuts screen build time from hours to minutes.
+
+## Principles
+
+Three principles shape every agent's recommendations:
+
+1. **Completeness is cheap.** AI makes the marginal cost of the full implementation near-zero. Always do the complete thing — all edge cases, all states, all tests. The delta is minutes.
+2. **Search before building.** Check if Supabase, React Router, TanStack, or Tailwind has a built-in before rolling custom. Three knowledge layers: tried-and-true, new-and-popular, first-principles.
+3. **User sovereignty.** Agents recommend, the human decides. No agent self-proceeds past a blocking gate.
+
+## Safety
+
+- **Destructive command guardrails** — shell hooks intercept `rm -rf`, `DROP TABLE`, `git push --force`, and other destructive patterns before execution.
+- **Security audit** — OWASP Top 10, RLS verification, secrets scanning, and dependency supply chain checks run before every production deploy.
+- **Self-regulation** — QA fix loops track a WTF-likelihood score. If fixes start causing more problems than they solve, the agent stops and escalates.
+- **Escalation protocol** — any agent can stop and say "this is too hard." Three failed attempts on the same task triggers automatic escalation.
 
 ---
 
-## One-Time Setup
+## Quick Start
 
-Do this once per machine. Skip anything already done.
+### One-Time Setup
 
 **Accounts:**
-- [ ] [Supabase](https://supabase.com) — create two projects: dev + production
-- [ ] [Vercel](https://vercel.com) — connect your GitHub account
+- [ ] [Supabase](https://supabase.com) — two projects: dev + production
+- [ ] [Vercel](https://vercel.com) — connect GitHub
 - [ ] [Figma](https://figma.com) — access to Figma Make
-- [ ] Payment provider (if monetizing) — Stripe, PayOS, etc. Get test mode keys.
-- [ ] [Resend](https://resend.com) (if sending email) — get an API key
+- [ ] Payment provider (if monetizing) — test mode keys
+- [ ] [Resend](https://resend.com) (if sending email) — API key
 
 **Cursor settings:**
-- [ ] Settings → Features → Agent → **Auto-run terminal commands → On**
-- [ ] Settings → Features → Agent → **Auto-apply edits → On**
-- [ ] Model: **Claude Sonnet 4** (or latest) as default
+- [ ] Auto-run terminal commands → On
+- [ ] Auto-apply edits → On
+- [ ] Model: Claude Sonnet 4 (or latest)
 
-**Global MCP** — add to `~/.cursor/mcp.json` (available in all projects):
+**Global MCP** — add to `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
@@ -42,251 +57,104 @@ Do this once per machine. Skip anything already done.
 }
 ```
 
----
-
-## Step-by-Step: Idea to Production
-
-### Step 1 — Create Your Repo
+### Create Your Repo
 
 ```bash
 gh repo create [app-name] --template your-org/rad-starter --private --clone
 cd [app-name]
 ```
 
----
+### Build Sequence
 
-### Step 2 — Write the Northstar + EDS (outside Cursor)
+| Step | Command | What happens | Gate |
+|---|---|---|---|
+| 1 | _(external)_ | Write northstar + EDS in Claude.ai / Gemini / any collaborative tool | Place in `artifacts/docs/` |
+| 2 | `/office-hours` | Validate northstar structure + stress-test the idea | All 12 sections pass |
+| 3 | `/init` | Scaffold project, install deps, link Vercel | Fill `.env.local` + MCP tokens |
+| 4 | `/phase2` | Screen specs + Figma Make brief | Approve, then design in Make |
+| 5 | _(manual)_ | Copy Make code to `src/make-import/` | — |
+| 6 | `/phase4` | Tech spec (complexity scan → targeted research → invariants → schema → contracts) | Approve |
+| 7 | `/setup` | Build plan with feature dependency graph | Approve |
+| 8 | `/foundation` | Backend infra → Frontend foundation (unattended) | Auto |
+| 9 | `/feature [name]` | Backend → Frontend → QA per feature, in waves | Approve each QA PASS |
+| 10 | `/visual-audit [url]` | Visual fidelity check on staging | Fix BLOCKING items |
+| 11 | `/dogfood` | Human uses staging app, records findings | Fix BLOCKING items |
+| 12 | `/pre-handoff` | Security audit + quality review | Approve |
+| 13 | `/deploy [ref]` | Push to production | Smoke check |
 
-Before opening Cursor, produce two files using any LLM or manual process:
-
-| File | What it is |
-|---|---|
-| `artifacts/docs/northstar-[app].html` | Product northstar — target user, core loop, features, revenue model, moat, auth model, payment, integrations |
-| `artifacts/docs/emotional-design-system.md` | Brand voice, visual direction, emotional register, copy formula, forbidden patterns |
-
-Place both in `artifacts/docs/`. The template will hard-stop without them.
-
-**Detailed format:** See `phase1-northstar-eds-writer.md` in project knowledge for the full section-by-section specification.
-
----
-
-### Step 3 — Initialize the Project
-
-Open in Cursor and run:
-
-```
-/init
-```
-
-This scaffolds the React Router v7 project, installs dependencies, fills in `copy-rules.mdc` from the EDS, creates the staging branch, and links Vercel.
-
-**After `/init` — you do:**
-- [ ] Fill in `.env.local` (Supabase URL + publishable key)
-- [ ] Fill in `.cursor/mcp.json` (Supabase + Vercel tokens)
-- [ ] Place PWA icons in `public/icons/` (192×192 + 512×512)
-- [ ] Place a Vietnamese-compatible `.woff2` font in `public/fonts/`
-
----
-
-### Step 4 — Plan the Screens
-
-```
-/phase2
-```
-
-The Product Designer agent produces:
-1. **Screen specs** (`screen-specs-[app]-v1.md`) — metadata for every screen: data variables, interaction flows, copy slots, loading/error/empty states, credit costs
-2. **Figma Make brief** (`figma-make-brief.md`) — structured prompt with brand context, anti-patterns, and per-screen content hierarchy
-
-**Gate:** Review both files → approve.
-
----
-
-### Step 5 — Build the Prototype in Figma Make (you do this)
-
-Take the Figma Make brief and build the complete app prototype in Figma Make. This is the most important human step.
-
-**What Make produces:** A complete working React + Tailwind app — every button works, every form submits, every list renders, all with hardcoded mock data.
-
-**Tips for good Make output:**
-- Paste the Brand Context section into Make's custom rules
-- Use realistic Vietnamese mock data (names, dates, prices from the brief)
-- Use property names that map to database columns (`displayName`, `creditBalance`)
-- Include 3–5 items in lists for visual density
-- Let Make handle all visual decisions — colors, typography, spacing, animations
-
-**When done:**
-1. Go to Make's **Code tab**
-2. Copy ALL files into `src/make-import/` in your project
-3. Approve to proceed
-
----
-
-### Step 6 — Write the Tech Spec
-
-```
-/phase4
-```
-
-The Tech Lead reads Make's mock data structures alongside the northstar to derive the database schema. Column names match mock object property names where possible.
-
-**Gate:** Review `tech-spec.md` → approve.
-
----
-
-### Step 7 — Generate the Build Plan
-
-```
-/setup
-```
-
-The Tech Lead produces `build-plan.md` — the feature dependency graph with per-feature context packages. Each package tells the build agents exactly what to build without reading the full spec.
-
-**Gate:** Review `build-plan.md` → approve.
-
----
-
-### Step 8 — Build Foundation
-
-```
-/foundation
-```
-
-Two sequential agents run unattended:
-
-**Backend Foundation:**
-- Supabase client, AuthProvider, types, hooks
-- Schema migrations + RLS policies + seed data
-- Edge Functions (payment webhook, email — if applicable)
-- Static SEO/PWA files (robots.txt, sitemap.xml, manifest.json)
-- Generate `database.types.ts`
-
-**Frontend Foundation:**
-- Move Make's `components/ui/` → `src/components/ui/` (as-is)
-- Catalog components + build missing states (EmptyState, ErrorBanner, SkeletonCard)
-- Port Make's CSS design tokens (`theme.css` with `@theme inline`) into `src/app.css`, self-host fonts, fix `next-themes` in sonner.tsx
-- Build landing page as first screen (validates everything works)
-- Build auth screens (login, signup, OAuth callback)
-
-**Result:** Landing page live on staging URL. Auth flow working end-to-end.
-
----
-
-### Step 9 — Build Features (wave by wave)
-
-```
-/feature auth
-/feature profile-settings    ← Wave 1 features run in parallel
-```
-
-Each feature runs: **Backend → Frontend → QA**.
-
-The frontend agent is an **integrator**, not a builder:
-- Finds the Make component for each screen
-- Ports JSX + Tailwind into a route file
-- Swaps hardcoded mock data for real Supabase queries
-- Replaces fake auth/nav/payment with real implementations
-- Adds loading/error/empty states (Make only has happy path)
-- Keeps everything else Make generated — layout, styling, animations
-
-**Gate:** QA agent validates each feature → you approve each PASS → next wave starts.
-
----
-
-### Step 10 — Visual Audit
-
-```
-/visual-audit https://[app]-staging.vercel.app
-```
-
-Product Designer checks every screen against Make's original components, slop guard rules, mobile viewport, interaction states, copy quality, and landing page completeness.
-
-**Gate:** Fix all BLOCKING findings.
-
----
-
-### Step 11 — Pre-Handoff Safety Audit
-
-```
-/pre-handoff
-```
-
-QA Agent runs a two-pass security and quality audit — RLS gaps, secrets in bundle, Edge Function validation, dead code, missing indexes. AUTO-FIX items applied directly, BLOCKING items escalated.
-
-**Gate:** Resolve all BLOCKING items → approve.
-
----
-
-### Step 12 — Deploy to Production
-
-```
-/deploy [production-supabase-ref]
-```
-
-DevOps Agent:
-1. Pushes schema to production Supabase
-2. Deploys Edge Functions
-3. Lists env vars for you to set in Vercel Dashboard
-4. Merges staging → main → confirms production is live
-
-**Post-deploy smoke check:**
-- [ ] Production loads, signup works, core loop completes
-- [ ] Payment works (test mode) and webhook fires
-- [ ] Landing page renders with OG tags (test with Facebook Sharing Debugger)
-- [ ] PWA installs on Android, iOS shows instructions
-- [ ] Lighthouse: LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms
-
-**Commercial readiness (your responsibility):**
-- [ ] Privacy Policy + Terms of Service pages
-- [ ] Switch payment provider to live keys → re-deploy
+See `RAD-GUIDE.md` for detailed instructions at each step.
 
 ---
 
 ## Architecture
 
 ```
-Frontend (React SPA on Vercel)     →  HTTPS  →  Supabase (sole backend)
-- React Router v7 + Vite + Tailwind            - Postgres + RLS
-- TanStack React Query (cache + state)         - Auth (email, OTP, OAuth)
-- Pre-rendered landing page at /               - Edge Functions (LLM, webhooks, cron, email)
-- SPA for /app/* (authenticated)               - Storage
-- Make TSX copied into route files             - Realtime (if needed)
-- @supabase/supabase-js for all data
-
-                                               Edge Functions → OpenRouter API (LLM gateway)
-                                               (data interpretation + user input reasoning)
+Frontend (React SPA on Vercel)          Supabase (sole backend)
+├── React Router v7 + Vite + Tailwind   ├── Postgres + RLS
+├── TanStack React Query (cache)        ├── Auth (email, OTP, OAuth)
+├── Pre-rendered landing at /           ├── Edge Functions (LLM, webhooks, cron)
+├── SPA for /app/* (auth-guarded)       ├── Storage
+├── Make TSX → route files              └── Realtime (if needed)
+└── @supabase/supabase-js
 ```
 
-No server runtime in the frontend. No middleware. No API routes. RLS is the single authorization boundary. Edge Functions handle LLM calls, webhooks, cron, email, and anything needing server-only API keys.
+No server runtime in the frontend. No middleware. No API routes. RLS is the single authorization boundary. Edge Functions handle anything needing server-only keys.
+
+---
+
+## Agent Team
+
+| Agent | Domain | Invoked via |
+|---|---|---|
+| **Tech Lead** | Orchestration, architecture, gates | Main Cursor session |
+| **Product Designer** | Screen specs, Make briefs, visual QA | `/phase2`, `/visual-audit` |
+| **Backend Developer** | Schema, migrations, RLS, Edge Functions | `/foundation`, `/feature` |
+| **Frontend Developer** | Screen integration, components, mobile | `/foundation`, `/feature` |
+| **QA Agent** | Feature validation, health scoring, security audit | `/feature`, `/pre-handoff` |
+| **DevOps Agent** | Production deploy | `/deploy` |
+| **Research Agent** | Integration docs + technical pattern research | `/research`, auto from `/phase4` |
+
+All agents follow standardized protocols: structured question format, completion status signals (DONE / BLOCKED / NEEDS_CONTEXT), and the escalation rule.
+
+---
+
+## Quality Infrastructure
+
+- **Northstar validation + stack fit** — `/office-hours` validates all 12 required sections plus checks product requirements against known stack constraints (Edge Function timeouts, Realtime connection limits, file processing caps). Mismatches are flagged before any code is written.
+- **Technical complexity scan** — Phase 4 scans features against a checklist of complexity signals (money/credits, real-time, file processing, complex auth, search, state machines). Features with signals get targeted research before the spec is written.
+- **Selective technical research** — the Research Agent handles both external integrations (Mode 1) and implementation pattern research (Mode 2). Complex features get domain-specific pattern docs that directly inform the schema design.
+- **Architecture reference** — the Tech Lead has a knowledge base (`.cursor/skills/architecture/SKILL.md`) with stack constraints, domain patterns (credit billing, subscriptions, multi-tenant, social feeds), and a technical decision template.
+- **Data invariants** — Phase 4 enumerates business rules (what must always be true) before designing the schema. Invariants drive CHECK constraints, indexes, and RLS policies.
+- **Schema anti-pattern checklist** — 15 checks against known failure modes: missing transaction logs, incorrect cascades, race conditions, RLS gaps, missing indexes.
+- **66 automated rule checks** — banned patterns, copy-then-edit enforcement, TanStack usage, CORS, staleness detection. Runs on every agent stop.
+- **Per-feature health scores** — weighted across visual fidelity, data/perf, security, interaction flows, build/tests, and copy. Stored as `baseline.json` for regression comparison.
+- **Diff-aware QA** — scopes testing to changed files and affected routes.
+- **Structured dogfooding** — between visual audit and pre-handoff, the builder uses the staging app for 30–60 minutes with a generated task list, records findings, and validates assumptions from office hours.
+- **Root cause investigation** — complex bugs use a 4-phase protocol: investigate → analyze → hypothesize → implement.
+- **Atomic commits** — one commit per fix, bisect-friendly history.
 
 ---
 
 ## Command Reference
 
-| Command | What it does | When |
-|---|---|---|
-| `/init` | Scaffold project, install deps, configure MCP | Once, at start |
-| `/phase2` | Screen specs + Figma Make brief | After init |
-| `/phase4` | Tech spec (schema from Make mock data) | After Make code copied |
-| `/setup` | Generate build plan with feature context packages | After tech spec approved |
-| `/foundation` | Backend infra + frontend foundation | After setup approved |
-| `/feature [name]` | Build one feature: Backend → Frontend → QA | Per feature, in waves |
-| `/visual-audit [url]` | Visual fidelity check on staging | After all features pass QA |
-| `/pre-handoff` | Security + quality audit | After visual audit |
-| `/deploy [ref]` | Production deploy | After pre-handoff approved |
-
-**Utility commands:**
-
 | Command | What it does |
 |---|---|
+| `/office-hours` | Validate northstar + product diagnostic + stack fit check |
+| `/init` | Scaffold project, install deps, configure MCP |
+| `/phase2` | Screen specs + Figma Make brief |
+| `/phase4` | Tech spec (complexity scan → research → invariants → schema → decisions → contracts) |
+| `/setup` | Generate build plan with feature context packages |
+| `/foundation` | Backend infra + frontend foundation |
+| `/feature [name]` | Build one feature: Backend → Frontend → QA |
+| `/visual-audit [url]` | Visual fidelity check on staging |
+| `/dogfood` | Structured product testing by the builder |
+| `/pre-handoff` | Security audit + quality review |
+| `/deploy [ref]` | Production deploy |
 | `/session-start` | Restore context after session drop |
 | `/session-end` | Save session memory |
-| `/status` | Diagnostic — phases, features, build health |
+| `/status` | Diagnostic — phases, features, health |
 | `/research [name]` | Research external integrations |
-| `/regen-feature [name]` | Regenerate feature context after spec amendment |
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build (Vite) |
-| `npm test` | Run test suite (Vitest) |
+| `/regen-feature [name]` | Regenerate feature context after amendment |
 
 ---
 
@@ -294,54 +162,37 @@ No server runtime in the frontend. No middleware. No API routes. RLS is the sing
 
 ```
 src/
-  make-import/              ← Figma Make code dump (temporary — deleted after porting)
   routes/
-    _index/route.tsx        ← Landing page (pre-rendered for SEO)
-    _auth/                  ← Login, signup, OAuth callback
-    _app/                   ← Authenticated screens (auth guard layout)
-      layout.tsx            ← Auth check → redirect if no session
-      [feature]/route.tsx   ← Feature screens (ported from Make)
+    _index/route.tsx           Landing page (pre-rendered for SEO)
+    _auth/                     Login, signup, OAuth callback
+    _app/                      Authenticated screens (auth guard layout)
+      [feature]/route.tsx      Feature screens (integrated from Make)
   components/
-    ui/                     ← Make's UI primitives (moved as-is)
-    EmptyState.tsx          ← Built during Foundation (Make doesn't generate these)
-    ErrorBanner.tsx
-    SkeletonCard.tsx
-  hooks/                    ← useAuth, useProfile, useInstallPrompt
+    ui/                        Make's UI primitives (copied as-is)
+  hooks/                       useAuth, useProfile, useInstallPrompt
   lib/
-    supabase.ts             ← Single client (publishable key)
-    auth.tsx                ← AuthProvider + useAuth hook
-    api-types.ts            ← Shared TypeScript interfaces
-    database.types.ts       ← Auto-generated (supabase gen types)
-    data/                   ← Typed query functions
-  app.css                   ← Tailwind directives + @font-face
+    supabase.ts                Single client (publishable key)
+    auth.tsx                   AuthProvider + useAuth
+    api-types.ts               Shared TypeScript interfaces
+    database.types.ts          Auto-generated from supabase gen types
+    data/                      Typed query functions
 
 supabase/
-  migrations/               ← SQL schema + RLS policies
-  functions/                ← Edge Functions (webhooks, cron, email)
-  seed.sql                  ← Dev seed data
-
-public/
-  manifest.json             ← PWA manifest
-  robots.txt                ← Crawl rules
-  sitemap.xml               ← Sitemap
-  fonts/                    ← Self-hosted .woff2
-  icons/                    ← PWA icons
+  migrations/                  SQL schema + RLS policies
+  functions/                   Edge Functions
+  seed.sql                     Dev seed data
 
 artifacts/
-  docs/                     ← Planning docs (northstar, EDS, screen specs, tech spec)
-  plans/                    ← Build plan + project tracker
-  issues/                   ← Issue tracking
-  integrations/             ← External API research docs
+  docs/                        Planning docs + ETHOS.md
+  plans/                       Build plan + project tracker
+  qa-reports/                  Health scores + dogfood report
+  issues/                      Issue tracking
+  integrations/                External API research docs
+
+.cursor/
+  agents/                      Specialist agent definitions
+  commands/                    Slash commands (including /office-hours, /dogfood)
+  rules/                       Auto-injected behavioral constraints
+  skills/                      Architecture reference, Phase 1 template, investigation, security audit, testing
+  hooks/                       Destructive command guardrails, agent-stop checks
 ```
----
-
-## Key Principles
-
-1. **Make designs, agents integrate.** Figma Make handles all visual decisions. Agents never invent layouts or choose colors — they port Make's working code and swap mock data for real queries.
-
-2. **RLS is the auth boundary.** No middleware, no API route guards. Every Supabase query is automatically scoped by the user's JWT. Edge Functions use the service role key only for webhooks and cron.
-
-3. **Ship complete, never return.** Every RAD cycle ships a complete product. If significant new features are needed, start a fresh RAD cycle — don't extend a shipped app.
-
-4. **Code is a commodity; speed of learning is the asset.** The template optimizes for shipping and validating, not for building the "perfect" codebase.
-

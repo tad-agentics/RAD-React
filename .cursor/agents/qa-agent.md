@@ -225,9 +225,9 @@ Dispatched after all features pass QA and the Product Designer completes the vis
 
 **Step A — Security audit:** Run the `/security-audit` skill (`.cursor/skills/security-audit/SKILL.md`) in standard mode. All BLOCKING findings must be resolved before continuing.
 
-**Step B — Review passes:** Run both passes from the `/review` skill against the complete codebase:
-- Pass 1 — Critical security, data integrity, and architecture checks
-- Pass 2 — Informational quality checks
+**Step B — Quality passes:** Run these checks against the complete codebase:
+- Pass 1 — Critical security, data integrity, and architecture checks (N+1 queries, race conditions, dead code, missing indexes, paywall gate integrity)
+- Pass 2 — Informational quality checks (code organization, naming consistency, unused imports, test coverage gaps)
 
 **Additional SPA-specific checks:**
 - Verify all routes behind `_app/` layout require auth — no unauthenticated access to app screens

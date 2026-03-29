@@ -41,30 +41,60 @@ cd [app-name]
 
 ---
 
-## Phase 1 — Product Definition (you do this)
+## Phase 1 — Product Definition (external)
 
-Before opening Cursor, produce two documents using any LLM or manual process:
+Phase 1 happens outside Cursor — in Claude.ai, Gemini, or any collaborative environment where the team can brainstorm, share with stakeholders, and iterate freely. The Phase 1 skill template (`.cursor/skills/phase1/SKILL.md`) is the reference specification for what the northstar and EDS must contain.
 
-| File | What it is |
-|---|---|
-| `artifacts/docs/northstar-[app].html` | Product northstar — target user, core loop, feature scope, revenue model, retention mechanic, moat, auth model, payment, integrations, Not Building list |
-| `artifacts/docs/emotional-design-system.md` | Brand voice, visual direction, emotional register, copy tone, forbidden patterns |
+Produce two documents:
 
-Place both in `artifacts/docs/`. The template will hard-stop without them.
+| Output | Format | What it is |
+|---|---|---|
+| `artifacts/docs/northstar-[app].html` | HTML | Product northstar — 12 required sections covering problem, user, solution, revenue, moat, scope, auth, integrations, payment, feature waves |
+| `artifacts/docs/emotional-design-system.md` | Markdown or HTML | Brand voice, visual direction, emotional register, copy tone, forbidden patterns |
 
-### Optional: Product Diagnostic
+Place both in `artifacts/docs/` before running `/office-hours`.
 
-If you want to stress-test the product idea before committing to a build:
+### Northstar structure (12 required sections)
+
+| § | Section | What downstream phases extract |
+|---|---|---|
+| 1 | The Problem | EDS emotional thesis |
+| 2 | Primary User | Persona, daily context, emotional state |
+| 3 | The Solution | Screen list, navigation paths |
+| 4 | Revenue Model | Payment schema, pricing screens |
+| 5 | Value Proposition | Landing page headline |
+| 6 | Competitive Moat | Architectural decisions |
+| 7 | Build Scope + Landing Content | Feature list, Make brief copy |
+| 8 | Not Building | Tech spec exclusion list |
+| 9 | Auth Model | Auth screens, RLS policies |
+| 10 | External Integrations | SDK wrappers, env vars |
+| 11 | Payment | Webhook handlers, checkout flow |
+| 12 | Feature Grouping | Build plan wave structure |
+| 13 | User Scenarios _(B2C, recommended)_ | Navigation flows, endpoint validation |
+
+Each section has an extraction test — a downstream phase must be able to derive its inputs from this section alone without asking questions.
+
+---
+
+## Office Hours — Validation Gate
 
 ```
 /office-hours
 ```
 
-This runs a 5-question diagnostic modeled on startup office hours — who is the user, what job does the product do, what would a 10-star version look like, what are you explicitly not building, and what unfair advantage do you have. The output is a synthesis that sharpens the northstar before you invest build time.
+Run after placing Phase 1 artifacts in `artifacts/docs/`. Cursor's job here is enforcement — validating that the documents have enough structural completeness for downstream phases to succeed.
+
+The command does four things:
+1. **Structural validation** — checks that all 12 sections are present and substantive (not placeholder text). Flags gaps with specific section numbers.
+2. **5-question diagnostic** — challenges the idea: who is the user, what job is the product doing, what does the 10-star version look like, what are you not building, what's the unfair advantage.
+3. **Stack fit check** — scans northstar requirements against known RAD stack constraints (Edge Function timeouts, Realtime connection limits, file processing caps, authorization complexity, search requirements). Flags mismatches before any code is written, with options: reduce scope, add an external service, accept risk, or acknowledge RAD isn't the right template.
+4. **Assumption extraction** — identifies the key assumptions the northstar makes about user behavior. Records what breaks if each assumption is wrong and how to validate post-launch. These feed the dogfooding step later.
+
+**Gate:** All 12 sections pass validation. If 3+ sections are weak or missing, the human completes them before proceeding.
 
 ---
 
-## Phase 2 — Screen Planning
+## Init + Environment Setup
 
 ### Configure Environment
 
@@ -86,7 +116,7 @@ Copy `.env.example` to `.env.local` and fill in values:
 /init
 ```
 
-The Tech Lead scaffolds the React Router v7 project, installs dependencies, fills in `copy-rules.mdc` from the EDS, creates the staging branch, and links Vercel.
+The Tech Lead scaffolds the React Router v7 project, installs dependencies, validates the northstar structure, fills in `copy-rules.mdc` from the EDS, creates the staging branch, and links Vercel.
 
 **After `/init`:**
 - [ ] Fill in `.env.local` values
@@ -94,7 +124,9 @@ The Tech Lead scaffolds the React Router v7 project, installs dependencies, fill
 - [ ] Place PWA icons in `public/icons/` (192×192 + 512×512)
 - [ ] Place a `.woff2` font in `public/fonts/`
 
-### Plan Screens
+---
+
+## Phase 2 — Screen Planning
 
 ```
 /phase2
@@ -138,7 +170,32 @@ If the northstar includes external APIs (payment, LLM, email), run research firs
 /research stripe openai
 ```
 
-The Research Agent fetches current SDK docs via Context7 + web search, produces one structured doc per integration in `artifacts/integrations/`. Phase 4 reads these when writing the tech spec — integration contracts are grounded in current documentation, not training data.
+### Complexity Scan + Selective Technical Research (automatic)
+
+Phase 4 begins with a complexity scan — the Tech Lead reads the architecture reference (`.cursor/skills/architecture/SKILL.md`) and checks each feature against a checklist of complexity signals:
+
+| Signal category | Examples |
+|---|---|
+| Money / Credits | Credit balance, subscriptions, refunds, webhook-driven state |
+| Real-Time | Live updates, collaborative editing, presence |
+| File Processing | Large uploads, file transformation, document parsing |
+| Complex Authorization | Shared resources, role-based access, ownership transfer |
+| Search / Filtering | Full-text search, faceted filtering, fuzzy matching |
+| State Machines | Lifecycle entities, multi-step workflows |
+
+For each triggered signal, the Research Agent is dispatched in Mode 2 (technical pattern research) to investigate the correct implementation pattern on the RAD stack. This produces `artifacts/integrations/pattern-[feature].md` — a focused doc with the recommended schema, concurrency strategy, and anti-patterns for that specific feature.
+
+Features with no triggered signals skip research — standard CRUD on Supabase doesn't need investigation.
+
+### Data Invariants
+
+Before deriving the schema, Phase 4 enumerates data invariants — business rules that must always be true. These come from the northstar, domain knowledge, and technical pattern research — not from mock data shapes:
+
+- "A user's credit balance must never go negative"
+- "Every credit change must have a corresponding transaction record"
+- "A purchase must be idempotent (webhook retries must not double-charge)"
+
+Invariants drive schema decisions: CHECK constraints, unique indexes, trigger functions, RLS policies. A schema designed from mock data alone is structurally correct but doesn't enforce business rules.
 
 ### Generate Tech Spec
 
@@ -146,7 +203,16 @@ The Research Agent fetches current SDK docs via Context7 + web search, produces 
 /phase4
 ```
 
-The Tech Lead reads Make's mock data structures alongside the northstar and screen specs to derive the database schema, Edge Function contracts, and data hooks. Column names match mock object property names where possible.
+The Tech Lead follows this sequence:
+1. Complexity scan — check each feature against complexity signals
+2. Dispatch Research Agent (Mode 2) for features with triggered signals
+3. Read pattern research outputs + architecture reference patterns
+4. Enumerate data invariants from northstar + domain + pattern research
+5. Extract entities from Make mock data + northstar
+6. Design schema from invariants + entities + access patterns
+7. Run the schema anti-pattern checklist (15 checks against known failure modes)
+8. Document technical decisions using the TD-N template (options considered, research basis, risks, revisit triggers)
+9. Write Edge Function contracts, data hooks, auth model
 
 **Gate:** Review `artifacts/docs/tech-spec.md` → approve.
 
@@ -160,7 +226,7 @@ Supabase dev project ref: [ref]
 Monetizes: [yes/no]
 ```
 
-The Tech Lead produces `artifacts/plans/build-plan.md` — the feature dependency graph with per-feature context packages. Each package tells the build agents exactly what to build without reading the full spec.
+The Tech Lead produces `artifacts/plans/build-plan.md` — the feature dependency graph with per-feature context packages.
 
 **Gate:** Review `build-plan.md` → approve.
 
@@ -222,9 +288,7 @@ The QA agent scopes testing to changed files using `git diff`, runs acceptance c
 | Build + test pass | 15% |
 | Copy quality (EDS compliance) | 10% |
 
-If the score drops below baseline, the QA agent reports which dimensions regressed and why. Bug fixes follow atomic commits — one fix per commit, with a regression test committed alongside.
-
-The fix loop includes self-regulation: if fixes are causing more reverts than progress, or the same file has been modified 5+ times, the agent stops and escalates to the Tech Lead.
+Bug fixes follow atomic commits — one fix per commit, with a regression test committed alongside. The fix loop includes self-regulation: if fixes are causing more reverts than progress, the agent stops and escalates.
 
 **Gate:** Approve each QA PASS → next wave starts.
 
@@ -239,6 +303,26 @@ The fix loop includes self-regulation: if fixes are causing more reverts than pr
 Product Designer checks every screen against Make's original components, slop guard rules, mobile viewport, interaction states, copy quality, and landing page completeness.
 
 **Gate:** Fix all BLOCKING findings.
+
+---
+
+## Dogfooding — Structured Product Testing
+
+```
+/dogfood
+```
+
+Between visual audit and pre-handoff, the builder uses the staging app as a real user for 30–60 minutes. This step catches problems that specs and agents cannot anticipate — confusing flows, wrong defaults, missing affordances, awkward copy in context.
+
+The Tech Lead generates a task list covering:
+- **Core loop tasks** — complete the core loop 3 times with different inputs
+- **Edge case tasks** — mobile viewport, auth boundaries, form abandonment, back button, error states
+- **Assumption validation** — tasks mapped to each assumption from office hours (what breaks if the assumption is wrong?)
+- **Emotional assessment** — first-time experience, core loop feeling, hesitation points, missing expectations
+
+After completing the tasks, findings are recorded in `artifacts/qa-reports/dogfood-report.md` with severity ratings (BLOCKING / SHOULD_FIX / NICE_TO_HAVE) and assumption validation results (VALIDATED / INVALIDATED / UNCLEAR).
+
+**Gate:** Fix all BLOCKING findings. SHOULD_FIX items carry into pre-handoff.
 
 ---
 
@@ -305,32 +389,30 @@ Every dispatch ends with a status: DONE, DONE_WITH_CONCERNS, BLOCKED, or NEEDS_C
 
 ### Escalation
 
-If an agent has attempted a task 3 times without success, is uncertain about a security-sensitive change, or the scope exceeds what it can verify — it stops, reports what was tried, and recommends what to do next. Bad work is worse than no work.
+If an agent has attempted a task 3 times without success, is uncertain about a security-sensitive change, or the scope exceeds what it can verify — it stops, reports what was tried, and recommends what to do next.
 
 ---
 
 ## Specialist Skills
 
-Beyond the main workflow, these skills are available for targeted use:
-
 | Skill | Purpose | When to use |
 |---|---|---|
-| `investigate` | 4-phase root cause analysis (reproduce → analyze → hypothesize → implement) | Complex bugs where the cause spans 3+ files |
-| `security-audit` | OWASP + RLS + secrets + deps audit | Automatically during `/pre-handoff`, or manually anytime |
-| `testing` | 54 automated rule checks across banned patterns, architecture, and staleness | Runs on agent stop via hooks |
+| `architecture` | Stack constraints, complexity signals, domain patterns, decision template | During `/office-hours` (stack fit) and `/phase4` (technical decisions) |
+| `phase1` | Northstar + EDS template with extraction tests | Writing Phase 1 artifacts from scratch |
+| `investigate` | 4-phase root cause analysis | Complex bugs spanning 3+ files |
+| `security-audit` | OWASP + RLS + secrets + deps audit | During `/pre-handoff`, or manually |
+| `testing` | 66 automated rule checks | Runs on agent stop via hooks |
 
 ---
 
 ## Session Management
-
-Every session starts and ends with a command:
 
 ```
 /session-start    ← restores context, reports current status + next action
 /session-end      ← saves session memory, updates project state
 ```
 
-If a session drops without `/session-end`, the memory file still contains all work blocks written during the session — context is never fully lost. Memory is updated continuously throughout the session, not just at boundaries.
+If a session drops without `/session-end`, the memory file still contains all work blocks — context is never fully lost.
 
 ---
 
@@ -340,19 +422,16 @@ If a session drops without `/session-end`, the memory file still contains all wo
 Run `/session-start`. It reads `ACTIVE_CONTEXT.md` and today's memory log and picks up from the last written block.
 
 **Agent drops mid-feature:**
-Run `/status` to see exactly where things stand, then re-dispatch the specific agent for the layer in progress.
+Run `/status` to see where things stand, then re-dispatch the specific agent.
 
 **Build fails:**
-Fix before building the next feature. Each agent runs `npm run build` before committing, so failures surface immediately.
+Fix before building the next feature. Each agent runs `npm run build` before committing.
 
 **Scope change during build:**
 1. Stop the current feature workstream
 2. If schema/API changes needed: update `tech-spec.md`, run `/regen-feature [name]`, re-dispatch
-3. If it's a new feature: add to `build-plan.md`, assign to a wave, dispatch as `/feature`
-4. Log as a BLOCKING amendment in `artifacts/docs/changelog.md`
-
-**BLOCKING issue found during QA:**
-QA Agent reports with specific file paths and evidence. Tech Lead opens an issue in `artifacts/issues/`, dispatches the relevant agent, then re-runs QA.
+3. If new feature: add to `build-plan.md`, assign to a wave, dispatch as `/feature`
+4. Log in `artifacts/docs/changelog.md`
 
 ---
 
@@ -360,22 +439,23 @@ QA Agent reports with specific file paths and evidence. Tech Lead opens an issue
 
 ```mermaid
 flowchart TD
-    OH["Office Hours\n(optional product diagnostic)"]
     A["Phase 1\nNorthstar + EDS"]
+    OH["/office-hours\nValidate northstar + diagnostic"]
     B["/init\nScaffold · deps · staging · Vercel"]
     C["/phase2\nScreen Specs + Figma Make Brief"]
     C2["Figma Make\n(human-driven design)"]
     D["/research\n(if integrations detected)"]
-    E["/phase4\nTech Spec"]
+    E["/phase4\nComplexity Scan → Research → Invariants → Schema → Decisions"]
     F["/setup\nBuild plan + context packages"]
     G["/foundation\nBackend → Frontend"]
     H["/feature × N\nWaves: Backend → Frontend → QA"]
     I["/visual-audit\nVisual fidelity check"]
+    DF["/dogfood\nHuman tests staging app"]
     J["/pre-handoff\nSecurity + quality audit"]
     K["/deploy\nProduction"]
 
-    OH -.->|"sharpens northstar"| A
-    A -->|"artifacts/docs/"| B
+    A -->|"artifacts/docs/"| OH
+    OH -->|"all sections validated"| B
     B -->|".env.local + MCP tokens"| C
     C -->|"design in Make"| C2
     C2 -->|"src/make-import/"| D
@@ -385,7 +465,8 @@ flowchart TD
     F -->|"approve"| G
     G --> H
     H -->|"approve each wave"| I
-    I -->|"fix BLOCKING"| J
+    I -->|"fix BLOCKING"| DF
+    DF -->|"fix BLOCKING"| J
     J -->|"approve"| K
 ```
 
@@ -395,14 +476,15 @@ flowchart TD
 
 | Command | Who | Output |
 |---|---|---|
-| `/office-hours` | Tech Lead | Product diagnostic synthesis |
+| `/office-hours` | Tech Lead | Northstar validation + product diagnostic |
 | `/init` | Tech Lead | Scaffolded workspace |
 | `/phase2` | Product Designer | Screen specs + Make brief |
-| `/phase4` | Tech Lead | Tech spec |
+| `/phase4` | Tech Lead | Tech spec (complexity scan → research → invariants → schema → decisions → contracts) |
 | `/setup` | Tech Lead | Build plan |
 | `/foundation` | Backend → Frontend | Infra + components + landing + auth |
 | `/feature [name]` | Backend → Frontend → QA | Feature layers + tests + health score |
 | `/visual-audit [url]` | Product Designer | Visual fidelity report |
+| `/dogfood` | Human + Tech Lead | Dogfood report + assumption validation |
 | `/pre-handoff` | QA Agent | Security + quality audit |
 | `/deploy [ref]` | DevOps Agent | Production live |
 

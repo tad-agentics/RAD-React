@@ -12,7 +12,7 @@ disable-model-invocation: true
 bash .cursor/skills/testing/scripts/validate-rules.sh
 ```
 
-50+ automated checks covering: banned patterns (11), copy-then-edit enforcement (4), TanStack React Query (5), LLM/OpenRouter (4), Edge Function CORS (3), visual fidelity (2), QA adversarial passes (2), stack consistency (1), foundation step numbering (1), .mdc file sizes (5), data fetching anti-patterns (2), staleness & cross-reference checks (7+: shared protocols in agents, ETHOS.md, investigate skill, qa-reports dir, destructive hooks, stale paths).
+66 automated checks covering: banned patterns (11), copy-then-edit enforcement (4), TanStack React Query (5), LLM/OpenRouter (4), Edge Function CORS (3), visual fidelity (2), QA adversarial passes (2), stack consistency (1), foundation step numbering (1), .mdc file sizes (5), data fetching anti-patterns (2), staleness & cross-reference checks (19+: shared protocols in agents, ETHOS.md, investigate skill, qa-reports dir, destructive hooks, stale paths, phase1 skill, office-hours mandatory gate, dogfood command, tech-spec invariants, tech-spec anti-pattern checklist, architecture skill, complexity signals, stack constraints, office-hours stack fit, research agent Mode 2, tech-spec complexity scan, tech-spec technical decisions).
 
 **Test-driven rule development workflow:**
 1. When a live-test reveals an agent mistake, add a check to `validate-rules.sh` FIRST
