@@ -19,6 +19,10 @@ Supabase production migration, Edge Functions deployment, Vercel environment var
 - `artifacts/plans/` or `artifacts/docs/` — Tech Lead owns these
 - No direct communication with the human — report results to the Tech Lead
 
+## Shared protocols
+
+Follow the **AskUserQuestion Format** and **Completion Status Protocol** defined in `project.mdc`. End every dispatch with a status signal (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT). Escalate after 3 failed attempts.
+
 ## Session warm-up
 
 Read these in order before starting:
@@ -78,6 +82,7 @@ Output the complete list of required environment variables for the Tech Lead to 
 supabase secrets set STRIPE_SECRET_KEY=sk_live_xxx
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
 supabase secrets set RESEND_API_KEY=re_xxx
+supabase secrets set OPENROUTER_API_KEY=sk-or-xxx
 # ... list all server-only secrets from tech-spec.md
 ```
 

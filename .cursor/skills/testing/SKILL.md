@@ -4,7 +4,23 @@ description: Per-feature QA checklist — validates a complete feature before ma
 disable-model-invocation: true
 ---
 
-# Testing — Per-Feature QA Checklist
+# Testing — Per-Feature QA Checklist + Rule Validation
+
+## Rule Validation (run after editing any .mdc, agent, or command file)
+
+```bash
+bash .cursor/skills/testing/scripts/validate-rules.sh
+```
+
+50+ automated checks covering: banned patterns (11), copy-then-edit enforcement (4), TanStack React Query (5), LLM/OpenRouter (4), Edge Function CORS (3), visual fidelity (2), QA adversarial passes (2), stack consistency (1), foundation step numbering (1), .mdc file sizes (5), data fetching anti-patterns (2), staleness & cross-reference checks (7+: shared protocols in agents, ETHOS.md, investigate skill, qa-reports dir, destructive hooks, stale paths).
+
+**Test-driven rule development workflow:**
+1. When a live-test reveals an agent mistake, add a check to `validate-rules.sh` FIRST
+2. Then fix the .mdc or agent file
+3. Re-run `validate-rules.sh` — must pass 40/40
+4. This prevents regressions: the same mistake can never return silently
+
+## Feature QA (run after feature frontend commits)
 
 First, run the automated build checks:
 

@@ -19,19 +19,23 @@ React components, route files, Supabase client hooks, navigation wiring, Figma M
 - `artifacts/` planning docs — Tech Lead owns these
 - No direct communication with the human — signal completion to the Tech Lead
 
+## Shared protocols
+
+Follow the **AskUserQuestion Format** and **Completion Status Protocol** defined in `project.mdc`. End every dispatch with a status signal (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT). Escalate after 3 failed attempts.
+
 ## Session warm-up
 
 Read these in order before starting any task:
 
 ```
-.cursor/rules/frontend.mdc + design-system.mdc + project.mdc + copy-rules.mdc (auto-injected)
+.cursor/rules/frontend.mdc + frontend-make.mdc + frontend-data.mdc + design-system.mdc + project.mdc + copy-rules.mdc (auto-injected)
 agent-workspace/ACTIVE_CONTEXT.md
 agent-workspace/memory/[today].md
 artifacts/plans/build-plan.md                     (feature context package for this dispatch)
 src/make-import/                                  (Make's code output — read App.tsx + routes.tsx first)
 ```
 
-**Figma Make import:** The human copies all Make code files into `src/make-import/`. Read `src/make-import/App.tsx` and any `routes.tsx` file to understand the screen-to-route mapping. **Your role is integrator: copy Make's files directly into the project, then make targeted `str_replace` edits. Never rewrite a Make file from scratch. Never "port" by reading Make's code and writing new code inspired by it.** See `frontend.mdc` for the full copy-then-edit methodology.
+**Figma Make import:** The human copies all Make code files into `src/make-import/`. Read `src/make-import/App.tsx` and any `routes.tsx` file to understand the screen-to-route mapping. **Your role is integrator: copy Make's files directly into the project, then make targeted `str_replace` edits. Never rewrite a Make file from scratch. Never "port" by reading Make's code and writing new code inspired by it.** See `frontend-make.mdc` for the full copy-then-edit methodology.
 
 **Do not** use Figma MCP tools. They do not work with Figma Make and will waste tokens on retries.
 
@@ -85,7 +89,7 @@ Make defines design tokens in CSS custom properties using Tailwind v4's `@theme 
 
 **Step 3 — React Query setup:**
 
-Create `src/lib/query-client.ts` and `src/lib/query-keys.ts` per the patterns in `frontend.mdc`. Wrap the app in `QueryClientProvider` in `src/root.tsx` (inside `AuthProvider`). This enables caching, dedup, and stale-while-revalidate for all Supabase queries.
+Create `src/lib/query-client.ts` and `src/lib/query-keys.ts` per the patterns in `frontend-data.mdc`. Wrap the app in `QueryClientProvider` in `src/root.tsx` (inside `AuthProvider`). This enables caching, dedup, and stale-while-revalidate for all Supabase queries.
 
 ```typescript
 // src/root.tsx — provider order
@@ -181,7 +185,7 @@ Dispatched per feature after that feature's Backend commits. Receives a feature 
 
 **Credit/paywall gates:** If the metadata block specifies a credit cost, implement the inline paywall flow from the interaction flow steps. Show partial result → paywall copy from copy slots → payment action → full result.
 
-**Data access rules (enforced — see `frontend.mdc` for full detail):**
+**Data access rules (enforced — see `frontend-data.mdc` for full detail):**
 
 - All data via `@supabase/supabase-js` through hooks or `src/lib/data/` query functions
 - Auth state via `useAuth()` hook from `src/lib/auth.tsx`

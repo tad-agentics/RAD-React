@@ -19,6 +19,10 @@ Supabase schema, migrations, RLS policies, Edge Functions (webhooks, cron, email
 - `artifacts/` planning docs — Tech Lead owns these
 - No direct communication with the human — signal completion to the Tech Lead
 
+## Shared protocols
+
+Follow the **AskUserQuestion Format** and **Completion Status Protocol** defined in `project.mdc`. End every dispatch with a status signal (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT). Escalate after 3 failed attempts.
+
 ## Session warm-up
 
 Read these in order before starting any task:
@@ -60,6 +64,7 @@ Write migration files to `supabase/migrations/` from `artifacts/docs/tech-spec.m
 - `YYYYMMDDHHmmss_rls_policies.sql` — all RLS policies per tech spec Auth & Security Model
 - One migration per logical group — do not combine the entire schema into a single file
 - Include `CREATE INDEX` for every foreign key column and any column used in WHERE clauses by API contracts
+- Include `llm_cache` table for LLM response caching: `input_hash TEXT PRIMARY KEY, response JSONB, created_at TIMESTAMPTZ DEFAULT now()`. No RLS needed — Edge Functions access via service_role.
 
 **Step 3 — Apply, verify, and generate types:**
 
@@ -88,11 +93,14 @@ If tech spec schema includes file/image columns (profile photos, document upload
 
 **Step 6 — Edge Functions (foundation-level):**
 
-If tech-spec requires any of these at the foundation level, create them now:
+Create these Edge Functions during Foundation:
+- `supabase/functions/_shared/cors.ts` — shared CORS headers (required by all functions, see `backend.mdc`)
+- `supabase/functions/interpret-result/index.ts` — LLM interpretation (all RAD apps). Pattern in `backend.mdc`.
+- `supabase/functions/reason-[domain]/index.ts` — LLM reasoning (all RAD apps). Pattern in `backend.mdc`.
 - `supabase/functions/payment-webhook/index.ts` — if payment integration exists
 - `supabase/functions/send-email/index.ts` — if transactional email exists (Resend wrapper)
 
-Each Edge Function follows the standard pattern in `backend.mdc`: Deno.serve, signature verification, idempotency check, service_role client.
+Each Edge Function follows the standard pattern in `backend.mdc`: CORS handler, Deno.serve, signature verification (webhooks), idempotency check (webhooks), service_role client.
 
 **Step 7 — SEO & PWA static files:**
 

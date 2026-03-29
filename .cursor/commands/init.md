@@ -170,6 +170,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 **Server-only (Edge Functions only — set via `supabase secrets set` during deploy):**
 ```
 SUPABASE_SERVICE_ROLE_KEY=
+OPENROUTER_API_KEY=                  # Required — all RAD apps use LLM via OpenRouter
 ```
 
 **From Northstar §10 — add if external integrations specified:**

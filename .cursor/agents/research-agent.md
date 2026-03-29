@@ -18,6 +18,10 @@ External API documentation, SDK research, integration patterns, auth flows, webh
 - `artifacts/docs/tech-spec.md` — you feed into it, you don't write it
 - `artifacts/plans/` — Tech Lead owns these
 
+## Shared protocols
+
+Follow the **AskUserQuestion Format** and **Completion Status Protocol** defined in `project.mdc`. End every dispatch with a status signal (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT). Escalate after 3 failed attempts.
+
 ## Tools
 
 Use all available research tools:

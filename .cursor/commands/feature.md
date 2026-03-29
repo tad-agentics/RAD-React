@@ -53,11 +53,18 @@ Read:
 - artifacts/docs/emotional-design-system.md — read §6 if any screen has a dopamine moment flag (D1–D4)
 
 Mode: Feature
-For each screen: COPY the Make screen file from src/make-import/screens/ directly into the route file. Then apply targeted str_replace edits per frontend.mdc (fix imports, swap mock data → Supabase queries, swap mock auth → useAuth). Do NOT rewrite any Make file from scratch — 90% of Make's code stays untouched.
+For each screen: COPY the Make screen file from src/make-import/screens/ directly into the route file. Then apply targeted str_replace edits per frontend-make.mdc (fix imports, swap mock data → Supabase queries, swap mock auth → useAuth). Do NOT rewrite any Make file from scratch — 90% of Make's code stays untouched.
 - Implement interaction flows exactly as specified in screen spec metadata
 - Copy slots are production-ready — use verbatim
 - Add loading/error/empty states below existing JSX (Make output only has happy path)
 - Every Tailwind class, animation, and layout decision from Make must be preserved exactly
+
+Mutation Patterns (mandatory):
+- Every useMutation must invalidate ALL affected query keys in onSuccess. Over-invalidate when in doubt.
+- Optimistic UI for user-facing actions (toggle, add, submit) — update cache in onMutate, rollback in onError, refetch in onSettled.
+- NO optimistic UI for credit deductions or payment actions — wait for server confirmation.
+- See frontend-data.mdc "Mutation Cache Invalidation" and frontend.mdc "Common Agent Mistakes" for full patterns.
+
 Signal completion when feat([name]): screens complete is committed.
 ```
 
@@ -80,10 +87,9 @@ Read:
 - artifacts/docs/emotional-design-system.md — §6 dopamine specs if any screen has a D1–D4 flag
 
 Mode: Feature
-Validate the complete [name] feature end-to-end.
-Run /testing skill checklist, write tests, run test suite.
-Additional: interaction flow completeness, copy quality test, RLS validation, auth guard, dopamine fidelity.
-Signal PASS or BLOCKING with specific items.
+Run all 5 verification passes (Visual Fidelity, Data & Performance, Security & RLS, Interaction Flows, Build & Test).
+After all passes: run the adversarial cross-check to strip false positives.
+Signal PASS (all 5 clean) or BLOCKING (items grouped by pass number).
 ```
 
 ## After completion

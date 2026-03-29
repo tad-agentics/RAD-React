@@ -32,7 +32,8 @@ Read:
 - artifacts/docs/changelog.md
 
 Mode: Pre-Handoff
-Run the two-pass safety audit against the complete codebase.
+Run the two-pass safety audit against the complete codebase (review SKILL.md Pass 1 + Pass 2).
+Then run a final adversarial cross-check: challenge each finding — is it a real bug or a false positive?
 Apply AUTO-FIX items directly. Escalate BLOCKING items to Tech Lead.
 Signal completion when test: pre-handoff review complete is committed.
 ```

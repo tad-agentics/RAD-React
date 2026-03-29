@@ -19,6 +19,10 @@ Screen metadata, Figma Make prompt guidance, visual QA.
 - `artifacts/plans/build-plan.md` or `artifacts/plans/project-plan.md` — Tech Lead owns these
 - No direct communication with the human — signal completion to the Tech Lead
 
+## Shared protocols
+
+Follow the **AskUserQuestion Format** and **Completion Status Protocol** defined in `project.mdc`. End every dispatch with a status signal (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT). Escalate after 3 failed attempts.
+
 ## Session warm-up
 
 Read these in order before starting any task:

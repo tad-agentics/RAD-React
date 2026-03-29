@@ -35,7 +35,9 @@ Foundation backend includes:
 - Schema migrations + RLS policies + seed data
 - OAuth setup instructions (if applicable)
 - Storage buckets + helpers (if applicable)
-- Edge Functions: payment webhook, send-email (if applicable)
+- Edge Functions: payment webhook, send-email (if applicable), LLM interpret/reason functions (all RAD apps)
+- LLM cache table (llm_cache) in initial migration
+- Set Edge Function secrets: `supabase secrets set OPENROUTER_API_KEY=...` (+ payment/email keys if applicable)
 - Static SEO/PWA files:
   - public/robots.txt — allow /, disallow /app/
   - public/sitemap.xml — landing page at priority 1
@@ -70,7 +72,7 @@ Mode: Foundation
 Step 0: Install Make's dependencies — scan imports across Make's files (not just package.json). Run npm install [packages]. Verify npm run build passes.
 Step 1: Copy src/make-import/components/ui/ → src/components/ui/ as-is. Copy other shared components (ScreenHeader, CreditGate, etc.) → src/components/. Fix import paths. Catalog Make's components and produce artifacts/docs/design-system-spec.md (per design-system SKILL.md). Build any additional shared components Make didn't generate (EmptyState, ErrorBanner, SkeletonCard).
 Step 2: Copy Make's theme.css (CSS custom properties + @theme inline) into src/app.css. Replace Google Fonts CDN imports with self-hosted .woff2. Fix next-themes import in sonner.tsx.
-Step 3: Create src/lib/query-client.ts (QueryClient with default staleTime: 60s) and src/lib/query-keys.ts per frontend.mdc. Wrap app in QueryClientProvider in src/root.tsx. Create src/hooks/useCredits.ts shared hook.
+Step 3: Create src/lib/query-client.ts (QueryClient with default staleTime: 60s) and src/lib/query-keys.ts per frontend-data.mdc. Wrap app in QueryClientProvider in src/root.tsx. Create src/hooks/useCredits.ts shared hook.
 Step 4: Create src/hooks/useInstallPrompt.ts (spec in tech-spec §18).
 Step 5: Landing page (src/routes/_index/route.tsx) — if Make has a landing page, COPY the file directly and apply targeted edits. Otherwise build from northstar §7b.
   - Route: / (pre-rendered at build time)

@@ -51,6 +51,9 @@ agent-workspace/temp/*
 agent-workspace/scripts/*
 !agent-workspace/scripts/.gitkeep
 
+# RAD — local sync target when using vendored rad-rr7-template
+rad-rr7-template/.sync-target
+
 # RAD — MCP config contains credentials
 .cursor/mcp.json
 

@@ -51,8 +51,8 @@ Extract from context — the tech spec must not re-derive what the northstar alr
 
 **Standard stack (unless northstar overrides):**
 - React Router v7 (Vite) · Tailwind CSS · Supabase (DB + Auth + RLS + Edge Functions) · TanStack React Query (caching + state) · Vercel
-- LLM features planned (must be named explicitly)
-- Monthly LLM cost ceiling (if applicable)
+- LLM via OpenRouter (all RAD apps use LLM for data interpretation/reasoning — specify model e.g. anthropic/claude-sonnet-4)
+- Monthly LLM cost ceiling
 
 ---
 
@@ -196,7 +196,7 @@ For each integration, summarize the patterns and reference the source:
 | Server logic | Supabase Edge Functions | Webhooks, cron, email, service_role operations |
 | Deployment | Vercel (static SPA) | Pre-rendered `/`, SPA fallback for `/app/*` |
 | Email | Resend (via Edge Function) | [include if email in scope; omit otherwise] |
-| LLM | [provider or omit] | [via Edge Function if server-only API key needed] |
+| LLM | OpenRouter (via Edge Function) | All RAD apps use LLM for data interpretation/reasoning. Server-only API key. |
 | Payments | [from northstar §11 — Stripe / PayOS / other. Do not default to Stripe.] | |
 | Animation | [motion — include only if EDS §6 Dopamine Moments require it] | |
 

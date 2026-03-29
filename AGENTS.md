@@ -51,6 +51,8 @@ All specialists are used proactively. When choosing which subagent to launch:
 | Any design work — screen specs, Make prompts, visual audit | `product-designer` |
 | Any deployment work | `devops-agent` |
 | Research an external integration (API docs, SDK, webhooks) | `research-agent` |
+| Complex bug investigation (root cause unclear, fix spans >3 files) | Tech Lead uses `.cursor/skills/investigate/SKILL.md` |
+| Security audit before deploy (OWASP + RLS + secrets + deps) | QA Agent uses `.cursor/skills/security-audit/SKILL.md` |
 
 ---
 
@@ -58,6 +60,7 @@ All specialists are used proactively. When choosing which subagent to launch:
 
 | Phase | Command | Who | Gate |
 |---|---|---|---|
+| **Office Hours** | `/office-hours` | Tech Lead | _(optional — run before /init to stress-test the product idea)_ |
 | **Init** | `/init` | Tech Lead | Confirm Phase 1 artifacts present |
 | **Phase 2** | `/phase2` | Product Designer | Human approves screen specs + Figma Make brief |
 | **Figma Make** | _(human-driven)_ | Human in Figma Make | Make code copied to `src/make-import/` |
@@ -70,8 +73,6 @@ All specialists are used proactively. When choosing which subagent to launch:
 | **Deploy** | `/deploy [ref]` | DevOps Agent | — |
 
 Blocking gates are enforced — no agent self-proceeds to the next phase.
-
-**Before Init (new repo only):** `/populate-from-rad-react` runs `scripts/populate-from-rad-react.sh` to copy files from `tad-agentics/RAD-React` into an empty app folder. Use when the human created a new GitHub repo but does not have template files yet. Do not push the app to the template repo.
 
 ---
 
@@ -95,9 +96,11 @@ Blocking gates are enforced — no agent self-proceeds to the next phase.
 | `artifacts/docs/figma-make-brief.md` | Phase 2 output — Figma Make input brief |
 | `artifacts/docs/design-system-spec.md` | Make component inventory (produced during Foundation) |
 | `artifacts/docs/tech-spec.md` | Phase 4 output |
+| `artifacts/docs/ETHOS.md` | Builder ethos — completeness, search-before-building, user sovereignty |
 | `artifacts/docs/changelog.md` | Ongoing deviations from spec |
 | `artifacts/plans/build-plan.md` | Feature dependency graph + per-feature context packages |
 | `artifacts/plans/project-plan.md` | Phase + feature completion tracker |
+| `artifacts/qa-reports/[feature]-baseline.json` | Per-feature QA health scores and findings — written by QA Agent |
 | `artifacts/issues/[issue-name].md` | Issue tracking — kebab-case, one file per issue |
 | `artifacts/integrations/[name].md` | Integration research docs — one per external dependency, written by Research Agent |
 | `artifacts/docs/features/[name].md` | Feature docs for post-launch features — written during `/new-feature` |
@@ -169,6 +172,8 @@ Any agent, any session, reconstructs full working context by reading:
 
 ## Commit Convention
 
+### Phase-level commits (progress gates)
+
 | Agent | Format | Example |
 |---|---|---|
 | Tech Lead (Phase 4) | `docs(phase4): tech spec complete` | — |
@@ -181,4 +186,17 @@ Any agent, any session, reconstructs full working context by reading:
 | QA Agent (feature) | `test([feature]): qa pass` | `test(billing): qa pass` |
 | QA Agent (pre-handoff) | `test: pre-handoff review complete` | — |
 | DevOps Agent | `chore(deploy): staging → main, production live` | — |
+
+### Atomic commits (within fix loops)
+
+Within any fix loop or multi-fix session, **one commit per fix.** Never bundle multiple fixes. Each commit must be independently revertable.
+
+| Context | Format | Example |
+|---|---|---|
+| QA bug fix | `fix(qa): [feature]-ISSUE-NNN — short description` | `fix(qa): billing-ISSUE-003 — paywall gate bypassed on zero credits` |
+| QA regression test | `test(qa): regression test for [feature]-ISSUE-NNN` | `test(qa): regression test for billing-ISSUE-003` |
 | Any agent (amendment) | `fix: [short description per changelog]` | — |
+
+### Bisect-friendly rule
+
+Every commit should be a single logical change. When you've made multiple changes (e.g., a rename + a rewrite + new tests), split them into separate commits. Renames/moves separate from behavior changes. Test infrastructure separate from test implementations. Each commit should be independently understandable and revertable.

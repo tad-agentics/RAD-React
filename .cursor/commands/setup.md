@@ -39,7 +39,7 @@ Present additions to the human for credential fill-in. Never commit `.cursor/mcp
 Check `package.json` for packages required by this app's tech stack (from tech-spec §5 and §6). Report any missing ones to the human:
 - Payment SDK — from tech-spec §5: install the SDK for the payment provider specified (e.g., `stripe` for Stripe, `payos` for PayOS). Do not default to Stripe.
 - Email SDK (`resend`) — if tech-spec Section 16 (Email Flows) is present
-- LLM SDK (`openai`, `@anthropic-ai/sdk`, etc.) — if tech-spec §13/14 lists AI features
+- LLM calls go through OpenRouter API (OpenAI-compatible) in Edge Functions — no frontend SDK needed
 - Animation libraries (`motion`, `react-countup`) — if EDS §6 Dopamine Moments require them (check if installed during /init)
 - Any other integration SDK listed in tech-spec §5
 
