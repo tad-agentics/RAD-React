@@ -1,6 +1,18 @@
 # RAD — Rapid App Development
 
-Ship a complete product in 2–3 days. You define the product, Figma Make designs it, a team of AI agents builds it.
+RAD is a multi-agent development template for Cursor that ships complete, production-ready web applications in 2–3 days. You define the product. Figma Make designs it. A coordinated team of AI agents builds it — backend, frontend, QA, design, devops, and research — each with strict boundaries, structured handoffs, and human approval gates.
+
+RAD is not a framework or a library. It is a set of agent instructions, slash commands, skills, and quality checks that turn Cursor into a managed development team. The human acts as Tech Lead — making architectural decisions, approving gates, and steering the product. The agents do the construction.
+
+## What RAD Solves
+
+Building an app with AI agents without structure produces inconsistent, fragile output. Agents guess at architecture, skip edge cases, hallucinate integrations, and build features that contradict each other. RAD solves this by:
+
+- **Constraining each agent to a narrow domain** — the backend agent never touches frontend code, the frontend agent never writes migrations, the QA agent never self-resolves security decisions. Each agent reads only the files it needs and produces only the artifacts it owns.
+- **Enforcing a linear pipeline with gates** — no phase starts until the previous phase is approved. The northstar is validated before scaffolding. The tech spec is approved before building. Each feature passes QA before the next wave starts. No agent self-proceeds.
+- **Making the design the source of truth** — Figma Make generates a complete working React app with mock data. The frontend agent's job is integration (swap mocks for real Supabase queries), not construction. This eliminates the "AI rewrote my UI" problem — 90% of Make's code stays untouched.
+- **Validating technical decisions before code** — a complexity scan identifies features that need research (billing, real-time, complex auth). The Research Agent investigates implementation patterns on the specific stack. The tech spec documents every non-trivial decision with options considered, research basis, and revisit triggers.
+- **Catching problems at every layer** — 66 automated rule checks, per-feature health scores, schema anti-pattern checklists, structured dogfooding, and a security audit before every deploy.
 
 ## Stack
 
@@ -10,11 +22,11 @@ React Router v7 (Vite) · Supabase · TanStack React Query · Vercel · Tailwind
 
 You talk to a **Tech Lead** agent in Cursor. It orchestrates 6 specialist subagents — backend, frontend, QA, product design, devops, and research — each with a narrow domain, defined inputs, and structured outputs. Slash commands dispatch the right agent with the right context. You approve gates. Agents build.
 
-The key insight: **Figma Make produces a complete working React app with mock data.** The frontend agent's job is integration — swap mocks for real Supabase queries — not construction. This cuts screen build time from hours to minutes.
+The key insight: **Figma Make produces a complete working React app with mock data.** The frontend agent copies Make's files directly into route files, then applies targeted edits — swap mock data for Supabase queries, fix import paths, add loading/error/empty states. Layout, styling, and animations stay untouched. This cuts screen build time from hours to minutes.
 
 ## Principles
 
-Three principles shape every agent's recommendations:
+Three principles shape every agent's behavior:
 
 1. **Completeness is cheap.** AI makes the marginal cost of the full implementation near-zero. Always do the complete thing — all edge cases, all states, all tests. The delta is minutes.
 2. **Search before building.** Check if Supabase, React Router, TanStack, or Tailwind has a built-in before rolling custom. Three knowledge layers: tried-and-true, new-and-popular, first-principles.
