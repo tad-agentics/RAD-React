@@ -15,7 +15,53 @@ This is a client-side SPA. There are no Server Components, no Server Actions, no
 - **Auth:** Supabase Auth on the client. Auth guard is a layout route that checks session before rendering children.
 - **Server logic:** Zero server logic in the frontend. Webhooks, cron, email, LLM = Supabase Edge Functions (separate codebase in `supabase/functions/`)
 - **Pre-rendering:** Only the landing page (`/`) is pre-rendered at build time for SEO. All `/app/*` routes are SPA.
+- **Env:** All required `VITE_*` variables are validated in `src/lib/env.ts` (Zod) at startup — extend the schema when adding new client env vars; never scatter raw `import.meta.env` reads for secrets or required URLs.
 - **Make integration:** Figma Make TSX copied into route files — see `frontend-make.mdc` for full copy-then-edit methodology
+
+### Route-level code splitting (mandatory for `/app/*` screens)
+
+Every **authenticated feature screen** (leaf route under `src/routes/_app/*/route.tsx`, excluding layout shells) must lazy-load its main UI so the initial bundle does not include code for screens the user has not visited.
+
+**Keep eager (no `lazy`):** `src/routes/_index/route.tsx` (landing), `src/routes/_auth/*`, `src/routes/_app/layout.tsx` and other **layout** route modules — they run on every navigation and must stay lightweight.
+
+**Pattern:** The default export of `route.tsx` wraps the real screen in `Suspense`; the heavy UI lives in a colocated file (e.g. `HomeScreen.tsx` or `route.screen.tsx`) loaded with `React.lazy`.
+
+```tsx
+// src/routes/_app/example/route.tsx — adjust segment name as needed
+import { lazy, Suspense } from "react";
+
+const ExampleScreen = lazy(() => import("./ExampleScreen"));
+
+export default function ExampleRoute() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          role="status"
+          aria-label="Loading"
+          className="min-h-[40vh] animate-pulse rounded-lg bg-muted"
+        />
+      }
+    >
+      <ExampleScreen />
+    </Suspense>
+  );
+}
+```
+
+```tsx
+// src/routes/_app/example/ExampleScreen.tsx — default export = full page UI (from Make + hooks)
+export default function ExampleScreen() {
+  // useQuery, handlers, JSX
+  return <main>...</main>;
+}
+```
+
+Extract a shared `RouteScreenFallback` (or skeleton) to `src/components/` when the same fallback is reused across many routes; keep it visually consistent with screen loading rules in `frontend-data.mdc`.
+
+### `clientLoader` vs TanStack Query (explicit non-choice)
+
+React Router v7 **clientLoader** can run before a route renders in SPA mode. **RAD does not use `clientLoader` for data loading.** TanStack Query remains the single source of truth for server state: `staleTime`, cache invalidation, optimistic updates, and deduplication across screens outperform one-shot loader fetches for Supabase-backed SPAs. Reserve `clientLoader` for future SSR/hydration architectures — not for the default RAD SPA stack.
 
 ## Component Reuse
 
@@ -79,10 +125,11 @@ Apply to: AuthProvider, CreditsProvider, any shared context. This is the #1 caus
 
 ## Performance
 
-### Critical — Bundle Size
+### Critical — Bundle Size + route chunks
 
+- **`vite.config.ts`:** vendor `manualChunks` splits `react-vendor`, `react-router`, `@tanstack/*`, `@supabase/*`, `@radix-ui/*`, `lucide-react`, and `motion` — do not remove without replacing with an equivalent strategy.
 - Import only what you use: `import { Camera } from "lucide-react"` not `import * as Icons from "lucide-react"`
-- Use `React.lazy()` + `Suspense` for heavy components not needed on initial render (modals, charts, rich editors)
+- **Route-level:** mandatory `React.lazy()` for `/app/*` leaf routes (see above). Additionally use `React.lazy()` + `Suspense` inside a screen for **heavy** optional pieces (charts, rich editors, large modals) below the fold or behind user action.
 - Libraries commonly affected by barrel imports: lucide-react, @radix-ui/react-*, date-fns, lodash
 
 ### High — Key Management

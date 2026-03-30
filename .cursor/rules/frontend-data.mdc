@@ -10,7 +10,7 @@ alwaysApply: false
 ## Data Fetching
 
 - All data fetches use `@supabase/supabase-js` via hooks in `src/hooks/` or query functions in `src/lib/data/`
-- The Supabase client is initialized once in `src/lib/supabase.ts` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+- The Supabase client is initialized once in `src/lib/supabase.ts` from validated `env` in `src/lib/env.ts` (Zod) — never bypass `env` for Supabase URL/key
 - Auth state is managed by `AuthProvider` in `src/lib/auth.tsx` — use `useAuth()` hook in components
 - All entity types: import from `src/lib/api-types.ts` — single source of truth
 - RLS handles all authorization — the JWT in the Supabase client scopes every query to the current user automatically

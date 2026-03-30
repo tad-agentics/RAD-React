@@ -99,8 +99,12 @@ This scaffolds a React Router v7 project with Vite and TypeScript.
 
 ```bash
 npm install @supabase/supabase-js @tanstack/react-query zod
-npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths @tailwindcss/vite
+npm install -D vitest @vitejs/plugin-react-swc jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths @tailwindcss/vite
 ```
+
+**Compiler note:** Default is **`@vitejs/plugin-react-swc`** (faster HMR/builds). If SWC mis-parses a dependency or you need a Babel-only transform, swap to `@vitejs/plugin-react` in `vite.config.ts` and Vitest config — last resort.
+
+If SWC mis-parses a dependency, fall back: `npm install -D @vitejs/plugin-react && npm uninstall @vitejs/plugin-react-swc`, then swap the plugin in `vite.config.ts` and `vitest.config.mts`.
 
 **PWA — evaluate and install one:**
 ```bash
@@ -122,7 +126,7 @@ Only install if Step 3 extraction confirmed dopamine moments exist.
 
 Create the following directories if they don't exist:
 
-- `src/lib/` — Supabase client, shared utilities
+- `src/lib/` — `env.ts` (Zod client env), Supabase client, shared utilities
 - `src/lib/data/` — typed query functions
 - `src/hooks/` — custom hooks (useAuth, useProfile, etc.)
 - `src/components/` — shared components
@@ -146,7 +150,7 @@ Create `vitest.config.mts` in the project root:
 
 ```ts
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
@@ -178,6 +182,10 @@ chmod +x .cursor/skills/*/scripts/*.sh
 ```
 
 ### 8. Set up environment variables
+
+Ensure `src/lib/env.ts` exists and validates every required `VITE_*` key the app reads (minimum: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`). Extend the Zod schema when adding new client env vars — see `backend.mdc` / `frontend.mdc`.
+
+**Fail-fast `env` (read before first `npm run dev` / `npm run build`):** Any import of `@/lib/env` runs Zod validation **immediately** at module load. If `.env.local` is missing, empty, or invalid, **Vite will throw during dev/build startup** and the stack trace often points at `src/lib/env.ts` — that is expected, not a bundler bug. Fill `.env.local` (real URL + publishable key) before starting the dev server so the app can compile.
 
 Copy `.env.example` to `.env.local`. Add env vars from Northstar §10 and §11 to both `.env.example` and `.env.local`:
 
@@ -277,7 +285,7 @@ Staging branch: created and pushed to origin/staging
 Vercel: linked — push to staging to get a preview URL
 
 Action required from human:
-  - Fill in .env.local credentials
+  - Fill in .env.local credentials (required before `npm run dev` — `src/lib/env.ts` throws at import time if URL/key missing; stack may point at env.ts)
   - Fill in .cursor/mcp.json tokens (Supabase, Vercel)
   - Place PWA icons in public/icons/ (192×192 + 512×512, regular + maskable)
   - Place Vietnamese font file (.woff2) in public/fonts/

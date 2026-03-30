@@ -2,6 +2,7 @@
 description: Backend, database, auth, and Edge Function rules — Supabase API-only backend
 globs:
   - supabase/**/*
+  - src/lib/env.ts
   - src/lib/supabase.ts
   - src/lib/auth.tsx
   - src/lib/data/**/*
@@ -19,7 +20,8 @@ There is no Node.js server. No API routes in the frontend. No Server Actions. No
 
 ## Supabase Client
 
-- One client in `src/lib/supabase.ts` using `createClient()` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+- Required client env vars are validated in `src/lib/env.ts` (Zod) — import `env` there, never read `import.meta.env` for Supabase keys directly in `supabase.ts`
+- One client in `src/lib/supabase.ts` using `createClient()` with `env.VITE_SUPABASE_URL` and `env.VITE_SUPABASE_PUBLISHABLE_KEY`
 - All frontend code (routes, components, hooks) uses this single client instance
 - Never import `@supabase/supabase-js` directly in route or component files — always import the pre-initialized client from `src/lib/supabase`
 - The client automatically attaches the user's JWT to every request — RLS handles authorization
@@ -28,15 +30,12 @@ There is no Node.js server. No API routes in the frontend. No Server Actions. No
 // src/lib/supabase.ts
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { env } from "@/lib/env";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY in .env.local");
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+export const supabase = createClient<Database>(
+  env.VITE_SUPABASE_URL,
+  env.VITE_SUPABASE_PUBLISHABLE_KEY,
+);
 ```
 
 ## Auth
@@ -308,6 +307,20 @@ Deno.serve(async (req) => {
 - Use service_role client — webhooks have no user session
 - Return 200 quickly — defer heavy processing if needed
 - Log webhook event ID + status for debugging
+
+## Social preview / share routes (conditional)
+
+If the northstar describes **public share links** (e.g. `/share/[token]`) that must unfurl with **Open Graph** or **Twitter** cards on social platforms, **pre-rendering `/` alone is not enough** — crawlers often hit the share URL directly.
+
+**Default RAD template:** only `react-router.config.ts` `prerender: ["/"]` is required. Do not add share prerender until the product needs it.
+
+**When needed — pick one:**
+
+1. **Static prerender** — add share URL pattern to `prerender()` only if tokens are enumerable at build time (rare).
+2. **SSR or meta edge function** — not in RAD’s SPA-only default; would be a major architectural fork.
+3. **Platform middleware / bot handling** — e.g. Vercel Routing Middleware or a small edge function that serves HTML with OG tags for `?share=` or `/share/*` bot user-agents, while humans still get the SPA shell. Document the chosen approach in `artifacts/docs/tech-spec.md` and implement during the feature that introduces sharing.
+
+Defer implementation until the first app wave that ships viral/share mechanics; document the planned approach in the tech spec so DevOps can set env and routes.
 
 ## Validation
 
